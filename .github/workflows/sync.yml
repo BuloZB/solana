@@ -30,9 +30,14 @@ jobs:
           git remote add upstream $UPSTREAM_URL || true
           git fetch upstream
 
+      - name: Detect Default Branch
+        id: detect_branch
+        run: |
+          DEFAULT_BRANCH=$(git remote show upstream | awk '/HEAD branch/ {print $NF}')
+          echo "DEFAULT_BRANCH=$DEFAULT_BRANCH" >> $GITHUB_ENV
+
       - name: Sync Fork with Upstream
         run: |
-          git checkout main
-          git merge upstream/main --no-edit || git merge --abort
-          git push origin main
-#test
+          git checkout $DEFAULT_BRANCH
+          git merge upstream/$DEFAULT_BRANCH --no-edit || git merge --abort
+          git push origin $DEFAULT_BRANCH
