@@ -2,17 +2,24 @@ name: Sync Fork Automatically
 
 on:
   schedule:
-    - cron: '0 */12 * * *'  # Každých 12 hodín
-  workflow_dispatch:  # Umožní manuálne spustenie
+    - cron: '0 */12 * * *'
+  workflow_dispatch:
 
 jobs:
   sync:
     runs-on: ubuntu-latest
+    # Dôležité: toto dá GITHUB_TOKEN práva pre zápis do repa.
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout Fork
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Aby sme mali celý git log
+          # Tu je dobré overiť, že naozaj
+          # používate GITHUB_TOKEN s write právami
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
 
       - name: Configure Git Identity
         run: |
@@ -22,7 +29,8 @@ jobs:
       - name: Get Original Repository URL
         id: get_upstream
         run: |
-          UPSTREAM_URL=$(jq -r '.parent.html_url' <<< $(curl -s "https://api.github.com/repos/${{ github.repository }}"))
+          UPSTREAM_URL=$(jq -r '.parent.html_url' <<< \
+            $(curl -s "https://api.github.com/repos/${{ github.repository }}"))
           echo "UPSTREAM_URL=$UPSTREAM_URL" >> $GITHUB_ENV
 
       - name: Add Upstream Remote and Fetch
